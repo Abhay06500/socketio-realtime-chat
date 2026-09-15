@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+// Convert a date into a simple relative time format
 function timeAgo(value) {
   const date = new Date(value);
   const diffMs = Date.now() - date.getTime();
@@ -21,11 +22,16 @@ export default function NotificationBell({
   onMarkAllRead,
   onClear
 }) {
+  // Control notification dropdown visibility
   const [open, setOpen] = useState(false);
+
+  // Reference to detect clicks outside the notification menu
   const wrapperRef = useRef(null);
 
+  // Count unread notifications
   const unreadCount = notifications.filter((item) => !item.isRead).length;
 
+  // Close the notification menu when clicking outside
   useEffect(() => {
     function handleOutsideClick(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -34,11 +40,13 @@ export default function NotificationBell({
     }
 
     document.addEventListener("mousedown", handleOutsideClick);
+
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
   return (
     <div className="notification-wrapper" ref={wrapperRef}>
+      {/* Notification bell button */}
       <button
         className="icon-button notification-button"
         type="button"
@@ -46,9 +54,14 @@ export default function NotificationBell({
         aria-label="Notifications"
       >
         <span aria-hidden="true">🔔</span>
-        {unreadCount > 0 && <span className="notification-count">{unreadCount}</span>}
+
+        {/* Display unread notification count */}
+        {unreadCount > 0 && (
+          <span className="notification-count">{unreadCount}</span>
+        )}
       </button>
 
+      {/* Notification dropdown menu */}
       {open && (
         <div className="notification-menu">
           <div className="notification-header">
@@ -57,29 +70,41 @@ export default function NotificationBell({
               <span>{unreadCount} unread</span>
             </div>
 
+            {/* Mark all unread notifications as read */}
             {unreadCount > 0 && (
-              <button className="link-button" type="button" onClick={onMarkAllRead}>
+              <button
+                className="link-button"
+                type="button"
+                onClick={onMarkAllRead}
+              >
                 Mark all read
               </button>
             )}
           </div>
 
+          {/* Notification list */}
           <div className="notification-list">
             {notifications.length === 0 && (
-              <div className="notification-empty">No notifications yet.</div>
+              <div className="notification-empty">
+                No notifications yet.
+              </div>
             )}
 
             {notifications.map((notification) => (
               <button
-                className={`notification-item ${notification.isRead ? "" : "unread"}`}
+                className={`notification-item ${
+                  notification.isRead ? "" : "unread"
+                }`}
                 key={notification._id}
                 type="button"
                 onClick={() => onMarkRead(notification._id)}
               >
+                {/* Display sender's initial */}
                 <span className="notification-avatar">
                   {notification.sender?.name?.charAt(0)?.toUpperCase() || "?"}
                 </span>
 
+                {/* Display notification details */}
                 <span className="notification-copy">
                   <strong>{notification.sender?.name || "User"}</strong>
                   <span>{notification.text}</span>
@@ -89,8 +114,13 @@ export default function NotificationBell({
             ))}
           </div>
 
+          {/* Clear all notifications */}
           {notifications.length > 0 && (
-            <button className="clear-button" type="button" onClick={onClear}>
+            <button
+              className="clear-button"
+              type="button"
+              onClick={onClear}
+            >
               Clear notifications
             </button>
           )}

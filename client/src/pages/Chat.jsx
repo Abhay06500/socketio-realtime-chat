@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 import api from "../services/api";
 
+// Return the ID from either a populated object or direct ID value
 function getEntityId(value) {
   return typeof value === "object" ? value?._id : value;
 }
@@ -14,21 +15,29 @@ export default function Chat() {
   const { user, logout } = useAuth();
   const { socket, onlineUsers, connectionError } = useSocket();
 
+  // Store available users and the currently selected chat user
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const selectedUserRef = useRef(null);
 
+  // Store chat messages and notifications
   const [messages, setMessages] = useState([]);
   const [notifications, setNotifications] = useState([]);
+
+  // Track loading and sending states
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // Store page-level error messages
   const [pageError, setPageError] = useState("");
 
+  // Keep the selected user reference updated for socket events
   useEffect(() => {
     selectedUserRef.current = selectedUser;
   }, [selectedUser]);
 
+  // Fetch all available users
   const loadUsers = useCallback(async () => {
     setLoadingUsers(true);
 
@@ -42,6 +51,7 @@ export default function Chat() {
     }
   }, []);
 
+  // Fetch notifications for the current user
   const loadNotifications = useCallback(async () => {
     try {
       const { data } = await api.get("/notifications");
@@ -51,11 +61,13 @@ export default function Chat() {
     }
   }, []);
 
+  // Load initial users and notifications
   useEffect(() => {
     loadUsers();
     loadNotifications();
   }, [loadUsers, loadNotifications]);
 
+  // Calculate unread notification counts for each sender
   const unreadCounts = useMemo(
     () =>
       notifications.reduce((counts, notification) => {
@@ -72,9 +84,11 @@ export default function Chat() {
     [notifications]
   );
 
+  // Mark all notifications from a specific sender as read
   const markNotificationsFromSenderRead = useCallback(async (senderId) => {
     if (!senderId) return;
 
+    // Update notification state immediately
     setNotifications((current) =>
       current.map((item) =>
         !item.isRead && getEntityId(item.sender) === senderId
@@ -91,9 +105,11 @@ export default function Chat() {
     }
   }, [loadNotifications]);
 
+  // Listen for real-time messages and notifications
   useEffect(() => {
     if (!socket) return;
 
+    // Handle incoming chat messages
     function handleMessage(message) {
       const senderId = getEntityId(message.sender);
       const receiverId = getEntityId(message.receiver);
@@ -102,12 +118,14 @@ export default function Chat() {
 
       if (!otherUser) return;
 
+      // Check whether the message belongs to the currently open chat
       const belongsToOpenChat =
         [senderId, receiverId].includes(user._id) &&
         [senderId, receiverId].includes(otherUser._id);
 
       if (!belongsToOpenChat) return;
 
+      // Add the message only if it does not already exist
       setMessages((current) => {
         if (current.some((item) => item._id === message._id)) {
           return current;
@@ -117,9 +135,11 @@ export default function Chat() {
       });
     }
 
+    // Handle incoming notifications
     function handleNotification(notification) {
       const senderId = getEntityId(notification.sender);
 
+      // Add the notification only if it does not already exist
       setNotifications((current) => {
         if (current.some((item) => item._id === notification._id)) {
           return current;
@@ -128,6 +148,7 @@ export default function Chat() {
         return [notification, ...current];
       });
 
+      // Mark notification as read when that sender's chat is already open
       if (senderId && senderId === selectedUserRef.current?._id) {
         markNotificationsFromSenderRead(senderId);
       }
@@ -136,27 +157,33 @@ export default function Chat() {
     socket.on("receive_message", handleMessage);
     socket.on("new_notification", handleNotification);
 
+    // Remove socket event listeners on cleanup
     return () => {
       socket.off("receive_message", handleMessage);
       socket.off("new_notification", handleNotification);
     };
   }, [socket, user._id, markNotificationsFromSenderRead]);
 
+  // Join the selected user's chat room
   useEffect(() => {
     if (!socket || !selectedUser) return;
 
     socket.emit("join_chat", { otherUserId: selectedUser._id });
 
+    // Leave the chat room when the selected user changes
     return () => {
       socket.emit("leave_chat");
     };
   }, [socket, selectedUser?._id]);
 
+  // Select a user and load the conversation
   async function selectUser(person) {
     setSelectedUser(person);
     setMessages([]);
     setLoadingMessages(true);
     setPageError("");
+
+    // Mark notifications from the selected user as read
     markNotificationsFromSenderRead(person._id);
 
     try {
@@ -169,12 +196,14 @@ export default function Chat() {
     }
   }
 
+  // Close the current chat
   function closeChat() {
     socket?.emit("leave_chat");
     setSelectedUser(null);
     setMessages([]);
   }
 
+  // Send a message to the selected user
   async function sendMessage(text) {
     if (!selectedUser) return false;
 
@@ -187,6 +216,7 @@ export default function Chat() {
         text
       });
 
+      // Add the sent message if it does not already exist
       setMessages((current) => {
         if (current.some((item) => item._id === data.message._id)) {
           return current;
@@ -204,6 +234,7 @@ export default function Chat() {
     }
   }
 
+  // Mark a single notification as read
   async function markNotificationRead(id) {
     try {
       const { data } = await api.patch(`/notifications/${id}/read`);
@@ -216,6 +247,7 @@ export default function Chat() {
     }
   }
 
+  // Mark all notifications as read
   async function markAllRead() {
     try {
       await api.patch("/notifications/read-all");
@@ -231,6 +263,7 @@ export default function Chat() {
     }
   }
 
+  // Delete all notifications
   async function clearNotifications() {
     try {
       await api.delete("/notifications");
@@ -242,6 +275,7 @@ export default function Chat() {
 
   return (
     <main className="app-shell">
+      {/* Application top navigation */}
       <header className="topbar">
         <div className="brand-row">
           <div className="brand-mark compact">RC</div>
@@ -251,8 +285,10 @@ export default function Chat() {
         </div>
 
         <div className="topbar-actions">
+          {/* Display socket connection status */}
           {connectionError && <span className="socket-error">Socket offline</span>}
 
+          {/* Notification menu */}
           <NotificationBell
             notifications={notifications}
             onMarkRead={markNotificationRead}
@@ -260,26 +296,37 @@ export default function Chat() {
             onClear={clearNotifications}
           />
 
+          {/* Current user information */}
           <div className="profile-chip">
-            <div className="avatar tiny">{user.name.charAt(0).toUpperCase()}</div>
+            <div className="avatar tiny">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+
             <div>
               <strong>{user.name}</strong>
               <span>{user.email}</span>
             </div>
           </div>
 
+          {/* Logout button */}
           <button className="secondary-button" type="button" onClick={logout}>
             Logout
           </button>
         </div>
       </header>
 
+      {/* Display page-level errors */}
       {pageError && (
-        <button className="page-error" type="button" onClick={() => setPageError("")}>
+        <button
+          className="page-error"
+          type="button"
+          onClick={() => setPageError("")}
+        >
           {pageError} <span>×</span>
         </button>
       )}
 
+      {/* Main chat workspace */}
       <section className="workspace">
         <UserList
           users={users}
@@ -290,6 +337,7 @@ export default function Chat() {
           loading={loadingUsers}
         />
 
+        {/* Show loading state while fetching conversation */}
         {loadingMessages && selectedUser ? (
           <section className="chat-empty">
             <p>Loading conversation...</p>
@@ -302,7 +350,9 @@ export default function Chat() {
             onSend={sendMessage}
             onBack={closeChat}
             sending={sending}
-            isOnline={selectedUser ? onlineUsers.includes(selectedUser._id) : false}
+            isOnline={
+              selectedUser ? onlineUsers.includes(selectedUser._id) : false
+            }
           />
         )}
       </section>

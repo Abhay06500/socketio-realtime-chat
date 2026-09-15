@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+// Format message timestamps into a readable time
 function formatTime(dateValue) {
   return new Intl.DateTimeFormat("en", {
     hour: "2-digit",
@@ -16,30 +17,40 @@ export default function ChatWindow({
   sending,
   isOnline
 }) {
+  // Store the current message input
   const [text, setText] = useState("");
+
+  // Reference to the end of the message list
   const endRef = useRef(null);
 
+  // Clear the input when the selected user changes
   useEffect(() => {
     setText("");
   }, [selectedUser?._id]);
 
+  // Scroll to the latest message when messages update
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Handle message submission
   async function handleSubmit(event) {
     event.preventDefault();
+
     const cleanText = text.trim();
 
+    // Prevent empty or duplicate submissions
     if (!cleanText || sending) return;
 
     const sent = await onSend(cleanText);
 
+    // Clear the input after a successful send
     if (sent) {
       setText("");
     }
   }
 
+  // Show an empty state when no user is selected
   if (!selectedUser) {
     return (
       <section className="chat-empty">
@@ -52,6 +63,7 @@ export default function ChatWindow({
 
   return (
     <section className="chat-panel">
+      {/* Chat header with selected user information */}
       <header className="chat-header">
         <button className="back-button" type="button" onClick={onBack}>
           ←
@@ -63,12 +75,15 @@ export default function ChatWindow({
 
         <div className="chat-user">
           <strong>{selectedUser.name}</strong>
+
+          {/* Display the selected user's online status */}
           <span className={isOnline ? "online-text" : ""}>
             {isOnline ? "Online" : "Offline"}
           </span>
         </div>
       </header>
 
+      {/* Conversation message list */}
       <div className="messages">
         {messages.length === 0 && (
           <div className="conversation-start">
@@ -77,8 +92,11 @@ export default function ChatWindow({
         )}
 
         {messages.map((message) => {
+          // Get the sender ID whether sender is populated or stored as an ID
           const senderId =
             typeof message.sender === "object" ? message.sender?._id : message.sender;
+
+          // Check whether the message belongs to the current user
           const mine = senderId === currentUser._id;
 
           return (
@@ -91,9 +109,11 @@ export default function ChatWindow({
           );
         })}
 
+        {/* Used for automatic scrolling to the latest message */}
         <div ref={endRef} />
       </div>
 
+      {/* Message input form */}
       <form className="message-form" onSubmit={handleSubmit}>
         <input
           value={text}
@@ -102,6 +122,7 @@ export default function ChatWindow({
           maxLength={2000}
           autoComplete="off"
         />
+
         <button type="submit" disabled={!text.trim() || sending}>
           {sending ? "Sending..." : "Send"}
         </button>
