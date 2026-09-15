@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getFieldError, validateAuthForm } from "../utils/authValidation";
 
 // Registration page component
 export default function Register() {
@@ -16,6 +17,7 @@ export default function Register() {
 
   // Store registration error messages
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Track form submission state
   const [submitting, setSubmitting] = useState(false);
@@ -27,16 +29,31 @@ export default function Register() {
 
   // Update form field values
   function updateField(event) {
+    const { name, value } = event.target;
+    const fieldError = getFieldError(event.target);
     setForm((current) => ({
       ...current,
-      [event.target.name]: event.target.value
+      [name]: value
     }));
+    setFieldErrors((current) => current[name]
+      ? { ...current, [name]: fieldError }
+      : current);
+  }
+
+  function validateField(event) {
+    const { name } = event.target;
+    const fieldError = getFieldError(event.target);
+    setFieldErrors((current) => ({ ...current, [name]: fieldError }));
   }
 
   // Handle registration form submission
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    const errors = validateAuthForm(event.currentTarget);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setSubmitting(true);
 
     try {
@@ -69,16 +86,24 @@ export default function Register() {
         {error && <div className="error-banner">{error}</div>}
 
         {/* Registration form */}
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <label>
             Name
             <input
               name="name"
               value={form.name}
               onChange={updateField}
+              onBlur={validateField}
+              aria-invalid={Boolean(fieldErrors.name)}
+              aria-describedby={fieldErrors.name ? "register-name-error" : undefined}
               minLength={2}
               required
             />
+            {fieldErrors.name && (
+              <span className="field-error" id="register-name-error" role="alert">
+                {fieldErrors.name}
+              </span>
+            )}
           </label>
 
           <label>
@@ -88,8 +113,16 @@ export default function Register() {
               name="email"
               value={form.email}
               onChange={updateField}
+              onBlur={validateField}
+              aria-invalid={Boolean(fieldErrors.email)}
+              aria-describedby={fieldErrors.email ? "register-email-error" : undefined}
               required
             />
+            {fieldErrors.email && (
+              <span className="field-error" id="register-email-error" role="alert">
+                {fieldErrors.email}
+              </span>
+            )}
           </label>
 
           <label>
@@ -99,9 +132,17 @@ export default function Register() {
               name="password"
               value={form.password}
               onChange={updateField}
+              onBlur={validateField}
+              aria-invalid={Boolean(fieldErrors.password)}
+              aria-describedby={fieldErrors.password ? "register-password-error" : undefined}
               minLength={6}
               required
             />
+            {fieldErrors.password && (
+              <span className="field-error" id="register-password-error" role="alert">
+                {fieldErrors.password}
+              </span>
+            )}
           </label>
 
           <button type="submit" disabled={submitting}>

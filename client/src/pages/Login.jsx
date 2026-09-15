@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getFieldError, validateAuthForm } from "../utils/authValidation";
 
 // Login page component
 export default function Login() {
@@ -9,12 +10,13 @@ export default function Login() {
 
   // Store login form values
   const [form, setForm] = useState({
-    email: "demo1@example.com",
-    password: "Demo123!"
+    email: "",
+    password: ""
   });
 
   // Store login error messages
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Track form submission state
   const [submitting, setSubmitting] = useState(false);
@@ -26,16 +28,31 @@ export default function Login() {
 
   // Update form field values
   function updateField(event) {
+    const { name, value } = event.target;
+    const fieldError = getFieldError(event.target);
     setForm((current) => ({
       ...current,
-      [event.target.name]: event.target.value
+      [name]: value
     }));
+    setFieldErrors((current) => current[name]
+      ? { ...current, [name]: fieldError }
+      : current);
+  }
+
+  function validateField(event) {
+    const { name } = event.target;
+    const fieldError = getFieldError(event.target);
+    setFieldErrors((current) => ({ ...current, [name]: fieldError }));
   }
 
   // Handle login form submission
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    const errors = validateAuthForm(event.currentTarget);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setSubmitting(true);
 
     try {
@@ -68,7 +85,7 @@ export default function Login() {
         {error && <div className="error-banner">{error}</div>}
 
         {/* Login form */}
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <label>
             Email
             <input
@@ -76,8 +93,16 @@ export default function Login() {
               name="email"
               value={form.email}
               onChange={updateField}
+              onBlur={validateField}
+              aria-invalid={Boolean(fieldErrors.email)}
+              aria-describedby={fieldErrors.email ? "login-email-error" : undefined}
               required
             />
+            {fieldErrors.email && (
+              <span className="field-error" id="login-email-error" role="alert">
+                {fieldErrors.email}
+              </span>
+            )}
           </label>
 
           <label>
@@ -87,20 +112,22 @@ export default function Login() {
               name="password"
               value={form.password}
               onChange={updateField}
+              onBlur={validateField}
+              aria-invalid={Boolean(fieldErrors.password)}
+              aria-describedby={fieldErrors.password ? "login-password-error" : undefined}
               required
             />
+            {fieldErrors.password && (
+              <span className="field-error" id="login-password-error" role="alert">
+                {fieldErrors.password}
+              </span>
+            )}
           </label>
 
           <button type="submit" disabled={submitting}>
             {submitting ? "Signing in..." : "Login"}
           </button>
         </form>
-
-        {/* Demo account credentials */}
-        <div className="demo-box">
-          <strong>Demo account</strong>
-          <span>demo1@example.com / Demo123!</span>
-        </div>
 
         {/* Link to the registration page */}
         <p className="auth-footer">

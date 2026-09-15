@@ -5,6 +5,7 @@ import UserList from "../components/UserList";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 import api from "../services/api";
+import { mergeChatUsers, updateChatUsersFromMessage } from "../utils/chatUsers";
 
 // Return the ID from either a populated object or direct ID value
 function getEntityId(value) {
@@ -43,7 +44,7 @@ export default function Chat() {
 
     try {
       const { data } = await api.get("/users");
-      setUsers(data.users);
+      setUsers((current) => mergeChatUsers(current, data.users));
     } catch (error) {
       setPageError(error.response?.data?.message || "Unable to load users");
     } finally {
@@ -111,6 +112,9 @@ export default function Chat() {
 
     // Handle incoming chat messages
     function handleMessage(message) {
+      // Update the sidebar even when no conversation is open.
+      setUsers((current) => updateChatUsersFromMessage(current, message, user._id));
+
       const senderId = getEntityId(message.sender);
       const receiverId = getEntityId(message.receiver);
 
@@ -138,6 +142,13 @@ export default function Chat() {
     // Handle incoming notifications
     function handleNotification(notification) {
       const senderId = getEntityId(notification.sender);
+
+      if (notification.message) {
+        setUsers((current) => updateChatUsersFromMessage(current, {
+          ...notification.message,
+          sender: notification.sender
+        }, user._id));
+      }
 
       // Add the notification only if it does not already exist
       setNotifications((current) => {
@@ -215,6 +226,8 @@ export default function Chat() {
         receiverId: selectedUser._id,
         text
       });
+
+      setUsers((current) => updateChatUsersFromMessage(current, data.message, user._id));
 
       // Add the sent message if it does not already exist
       setMessages((current) => {

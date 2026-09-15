@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Message from "../models/Message.js";
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
-import { createChatRoom, createUserRoom } from "../utils/chatRoom.js";
+import { createUserRoom } from "../utils/chatRoom.js";
 
 // Return the message history between the authenticated user and another user.
 export async function getConversation(req, res) {
@@ -84,10 +84,10 @@ export async function sendMessage(req, res) {
       .populate("message", "_id text sender receiver createdAt");
 
     const io = req.app.get("io");
-    const chatRoom = createChatRoom(req.userId, receiverId);
-
-    // Update the open conversation and deliver the recipient's notification.
-    io.to(chatRoom).emit("receive_message", message);
+    // Deliver messages to both participants, including those viewing another chat.
+    io.to(createUserRoom(req.userId))
+      .to(createUserRoom(receiverId))
+      .emit("receive_message", message);
     io.to(createUserRoom(receiverId)).emit("new_notification", notification);
 
     return res.status(201).json({ message });

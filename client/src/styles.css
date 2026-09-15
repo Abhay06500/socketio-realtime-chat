@@ -136,6 +136,20 @@ a {
   box-shadow: 0 0 0 4px rgba(37, 91, 214, 0.1);
 }
 
+.auth-form input[aria-invalid="true"] {
+  border-color: #b42318;
+}
+
+.auth-form input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.1);
+}
+
+.field-error {
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 400;
+}
+
 .auth-form button,
 .message-form button {
   border: 0;
