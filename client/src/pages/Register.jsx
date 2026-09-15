@@ -58,7 +58,6 @@ export default function Register() {
       <section className="auth-card">
         {/* Application branding */}
         <div className="brand-mark">RC</div>
-        <p className="eyebrow">MERN technical task</p>
 
         <h1>Create account</h1>
 

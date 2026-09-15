@@ -57,7 +57,6 @@ export default function Login() {
       <section className="auth-card">
         {/* Application branding */}
         <div className="brand-mark">RC</div>
-        <p className="eyebrow">MERN technical task</p>
 
         <h1>Welcome back</h1>
 
