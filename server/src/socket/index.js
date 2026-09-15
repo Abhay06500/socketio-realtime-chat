@@ -1,3 +1,4 @@
+import { connectDB } from "../config/db.js";
 import jwt from "jsonwebtoken";
 import { Server } from "socket.io";
 import User from "../models/User.js";
@@ -53,6 +54,7 @@ export function initializeSocket(httpServer) {
   // Authenticate socket connections using JWT
   io.use(async (socket, next) => {
     try {
+      await connectDB();
       const token = socket.handshake.auth?.token;
 
       if (!token) {
