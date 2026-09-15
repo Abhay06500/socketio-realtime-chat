@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getFieldError, validateAuthForm } from "../utils/authValidation";
+import PasswordInput from "../components/PasswordInput";
 
 // Registration page component
 export default function Register() {
@@ -125,10 +126,11 @@ export default function Register() {
             )}
           </label>
 
-          <label>
-            Password
-            <input
-              type="password"
+          <div className="auth-field">
+            <label htmlFor="register-password">Password</label>
+            <PasswordInput
+              id="register-password"
+              autoComplete="new-password"
               name="password"
               value={form.password}
               onChange={updateField}
@@ -143,7 +145,7 @@ export default function Register() {
                 {fieldErrors.password}
               </span>
             )}
-          </label>
+          </div>
 
           <button type="submit" disabled={submitting}>
             {submitting ? "Creating..." : "Register"}

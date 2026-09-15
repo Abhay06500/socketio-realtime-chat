@@ -164,6 +164,44 @@ a {
   margin-top: 4px;
 }
 
+.auth-field {
+  display: grid;
+  gap: 8px;
+}
+
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  padding-right: 76px;
+}
+
+.auth-form .password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  min-width: 60px;
+  min-height: 36px;
+  margin: 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  color: #255bd6;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.auth-form .password-toggle:hover {
+  background: #f2f6ff;
+}
+
+.auth-form .password-toggle:focus-visible {
+  outline: 2px solid #255bd6;
+  outline-offset: 1px;
+}
+
 .auth-footer {
   margin: 22px 0 0;
   text-align: center;

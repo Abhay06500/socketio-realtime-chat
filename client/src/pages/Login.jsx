@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getFieldError, validateAuthForm } from "../utils/authValidation";
+import PasswordInput from "../components/PasswordInput";
 
 // Login page component
 export default function Login() {
@@ -105,10 +106,11 @@ export default function Login() {
             )}
           </label>
 
-          <label>
-            Password
-            <input
-              type="password"
+          <div className="auth-field">
+            <label htmlFor="login-password">Password</label>
+            <PasswordInput
+              id="login-password"
+              autoComplete="current-password"
               name="password"
               value={form.password}
               onChange={updateField}
@@ -122,7 +124,7 @@ export default function Login() {
                 {fieldErrors.password}
               </span>
             )}
-          </label>
+          </div>
 
           <button type="submit" disabled={submitting}>
             {submitting ? "Signing in..." : "Login"}
