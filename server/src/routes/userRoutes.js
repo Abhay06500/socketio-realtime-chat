@@ -4,6 +4,7 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Get all users except the authenticated user
 router.get("/", protect, getUsers);
 
 export default router;

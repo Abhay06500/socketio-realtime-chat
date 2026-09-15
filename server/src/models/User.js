@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 
+// Define the schema for application users
 const userSchema = new mongoose.Schema(
   {
+    // User's display name
     name: {
       type: String,
       required: true,
@@ -9,6 +11,8 @@ const userSchema = new mongoose.Schema(
       minlength: 2,
       maxlength: 50
     },
+
+    // User's unique email address
     email: {
       type: String,
       required: true,
@@ -16,6 +20,8 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true
     },
+
+    // Store the user's hashed password
     password: {
       type: String,
       required: true,

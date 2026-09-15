@@ -4,6 +4,7 @@ import Notification from "../models/Notification.js";
 import User from "../models/User.js";
 import { createChatRoom, createUserRoom } from "../utils/chatRoom.js";
 
+// Return the message history between the authenticated user and another user.
 export async function getConversation(req, res) {
   try {
     const otherUserId = req.params.userId;
@@ -12,6 +13,7 @@ export async function getConversation(req, res) {
       return res.status(400).json({ message: "Invalid user id" });
     }
 
+    // Include both directions of the conversation, ordered oldest first.
     const messages = await Message.find({
       $or: [
         { sender: req.userId, receiver: otherUserId },
@@ -29,11 +31,13 @@ export async function getConversation(req, res) {
   }
 }
 
+// Save a message and notify the recipient in real time.
 export async function sendMessage(req, res) {
   try {
     const { receiverId, text } = req.body;
     const cleanText = text?.trim();
 
+    // Validate the recipient and message before writing to the database.
     if (!mongoose.isValidObjectId(receiverId)) {
       return res.status(400).json({ message: "Invalid receiver" });
     }
@@ -62,10 +66,12 @@ export async function sendMessage(req, res) {
       text: cleanText
     });
 
+    // Include user details for the response and real-time message event.
     message = await Message.findById(message._id)
       .populate("sender", "_id name email")
       .populate("receiver", "_id name email");
 
+    // Store the notification so it remains available when the recipient reconnects.
     let notification = await Notification.create({
       user: receiverId,
       sender: req.userId,
@@ -80,6 +86,7 @@ export async function sendMessage(req, res) {
     const io = req.app.get("io");
     const chatRoom = createChatRoom(req.userId, receiverId);
 
+    // Update the open conversation and deliver the recipient's notification.
     io.to(chatRoom).emit("receive_message", message);
     io.to(createUserRoom(receiverId)).emit("new_notification", notification);
 
